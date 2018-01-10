@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "classwizard", "classwizard\classwizard.vcxproj", "{A9ABFE7C-B2DB-45EE-A692-BF7884E559B5}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "licensewizard", "licensewizard\licensewizard.vcxproj", "{08BCF56E-0FC9-4EC7-BD2B-275DB0ED97AF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A9ABFE7C-B2DB-45EE-A692-BF7884E559B5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A9ABFE7C-B2DB-45EE-A692-BF7884E559B5}.Debug|Win32.Build.0 = Debug|Win32
+		{A9ABFE7C-B2DB-45EE-A692-BF7884E559B5}.Release|Win32.ActiveCfg = Release|Win32
+		{A9ABFE7C-B2DB-45EE-A692-BF7884E559B5}.Release|Win32.Build.0 = Release|Win32
+		{08BCF56E-0FC9-4EC7-BD2B-275DB0ED97AF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{08BCF56E-0FC9-4EC7-BD2B-275DB0ED97AF}.Debug|Win32.Build.0 = Debug|Win32
+		{08BCF56E-0FC9-4EC7-BD2B-275DB0ED97AF}.Release|Win32.ActiveCfg = Release|Win32
+		{08BCF56E-0FC9-4EC7-BD2B-275DB0ED97AF}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
