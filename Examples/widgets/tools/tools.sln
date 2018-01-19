@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "codecs", "codecs\codecs.vcxproj", "{AF380D66-0282-47FD-9F31-80E2461E8ACF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "completer", "completer\completer.vcxproj", "{52D7DB87-4E8B-4BDE-8FCB-0301FDBE1BFD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -13,6 +15,10 @@ Global
 		{AF380D66-0282-47FD-9F31-80E2461E8ACF}.Debug|Win32.Build.0 = Debug|Win32
 		{AF380D66-0282-47FD-9F31-80E2461E8ACF}.Release|Win32.ActiveCfg = Release|Win32
 		{AF380D66-0282-47FD-9F31-80E2461E8ACF}.Release|Win32.Build.0 = Release|Win32
+		{52D7DB87-4E8B-4BDE-8FCB-0301FDBE1BFD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{52D7DB87-4E8B-4BDE-8FCB-0301FDBE1BFD}.Debug|Win32.Build.0 = Debug|Win32
+		{52D7DB87-4E8B-4BDE-8FCB-0301FDBE1BFD}.Release|Win32.ActiveCfg = Release|Win32
+		{52D7DB87-4E8B-4BDE-8FCB-0301FDBE1BFD}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
