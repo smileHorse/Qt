@@ -24,12 +24,12 @@
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
     <Filter Include="Generated Files\Debug">
-      <UniqueIdentifier>{3aa42f9b-46ed-400b-88aa-946ffb66049c}</UniqueIdentifier>
+      <UniqueIdentifier>{60d7b3ff-0b00-425d-a80d-5be0f438aee2}</UniqueIdentifier>
       <Extensions>cpp;moc</Extensions>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
     <Filter Include="Generated Files\Release">
-      <UniqueIdentifier>{5431cbd8-3f2f-4ae2-8d2b-97f6ee2b7c75}</UniqueIdentifier>
+      <UniqueIdentifier>{66c63ca3-b033-4310-8537-8c0864f865a3}</UniqueIdentifier>
       <Extensions>cpp;moc</Extensions>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
@@ -38,49 +38,25 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="workspace.cpp">
+    <ClCompile Include="candy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_workspace.cpp">
+    <ClCompile Include="GeneratedFiles\Debug\moc_candy.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_workspace.cpp">
+    <ClCompile Include="GeneratedFiles\Release\moc_candy.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\qrc_workspace.cpp">
+    <ClCompile Include="GeneratedFiles\qrc_candy.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
-    <ClCompile Include="LoginWidget.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_LoginWidget.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_LoginWidget.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="workspace.h">
+    <CustomBuild Include="candy.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="workspace.qrc">
+    <CustomBuild Include="candy.qrc">
       <Filter>Resource Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="LoginWidget.h">
-      <Filter>Header Files</Filter>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="WorkSpace.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="images\main.png" />
-    <None Include="images\main.ico" />
   </ItemGroup>
 </Project>

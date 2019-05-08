@@ -1,0 +1,31 @@
+QMainWindow>QWidget
+{
+	border-image: url(:/images/bk-login.png);
+}
+
+QPushButton {
+    color: white;
+    font: bold 10pt;
+    border-image: url(:/images/button.png) 16;
+    border-width: 16px;
+    padding: -16px 0px;
+	min-height: 32px;
+    min-width: 120px;
+    max-width: 150px;
+}
+
+QPushButton:hover {
+    border-image: url(:/images/button-hover.png) 16;
+}
+
+QPushButton:pressed {
+    color: lightgray;
+    border-image: url(:/images/button-pressed.png) 16;
+    padding-top: -15px;
+    padding-bottom: -17px;
+}
+
+QLabel {
+	color: rgb(255, 255, 255);
+	font: 9pt;
+}

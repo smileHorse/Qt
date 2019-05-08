@@ -5,6 +5,7 @@
 
 
 class QWidget;
+class MLoginWidget;
 
 class WorkSpace : public QMainWindow
 {
@@ -16,12 +17,10 @@ public:
 
 private:
 	void createWidgets();
-	QWidget* createHeaderWidget();
-	QWidget* createBodyWidget();
-	void createLayout();
 	void createStatusBar();
 
 private:
+	MLoginWidget* m_loginWidget;
 };
 
 #endif // WORKSPACE_H

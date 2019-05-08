@@ -1,0 +1,8 @@
+**/Debug/
+**/GeneratedFiles/
+**/ipch
+*.ilk
+*.pdb
+*.opensdf
+*.sdf
+*.suo
