@@ -6,21 +6,20 @@ QMainWindow>QWidget
 QPushButton {
     color: white;
     font: bold 10pt;
-    border-image: url(:/images/button.png) 16;
-    border-width: 16px;
+    border-image: url(:/images/button.png) 18;
+    border-width: 18px;
     padding: -16px 0px;
 	min-height: 32px;
     min-width: 120px;
-    max-width: 150px;
 }
 
 QPushButton:hover {
-    border-image: url(:/images/button-hover.png) 16;
+    border-image: url(:/images/button-hover.png) 18;
 }
 
 QPushButton:pressed {
     color: lightgray;
-    border-image: url(:/images/button-pressed.png) 16;
+    border-image: url(:/images/button-pressed.png) 18;
     padding-top: -15px;
     padding-bottom: -17px;
 }

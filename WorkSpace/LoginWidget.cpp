@@ -64,7 +64,7 @@ void MLoginWidget::createLayout()
 	loginLayout->addWidget(m_userLineEdit);
 	loginLayout->addWidget(new QLabel(QStringLiteral("ÃÜÂë")));
 	loginLayout->addWidget(m_passwordLineEdit);
-	loginLayout->addWidget(m_loginButton, 0, Qt::AlignCenter);
+	loginLayout->addWidget(m_loginButton);
 	QGroupBox* groupBox = new QGroupBox();
 	groupBox->setLayout(loginLayout);
 
