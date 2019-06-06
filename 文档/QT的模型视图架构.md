@@ -350,8 +350,10 @@
 
   ​	`QAbstractItemModel`派生类在几种不同情况下必须实现的方法，如下表所示：
 
+  
+
   | 方法                                    | 说明                                                         |
-| --------------------------------------- | ------------------------------------------------------------ |
+| --------------------------------------- | :----------------------------------------------------------- |
   | **所有模型**                            |                                                              |
 | `data(index,role)`                      | 返回所属模型的指定项(索引为`index`)的角色(`role`, `Qt::ItemDataRole`类型)所对应的的`QVariant`类型数据值 |
   | `flags(index)`                          | 返回表示指定项(索引为`index`)是否可用、是否有复选框、是否可编辑、是否可选择等状态的一个或多个`Qt::ItemFlag`类型值的按位或 |
@@ -369,7 +371,7 @@
   | `insertColumns(column,count,index)`     | 在指定项(索引为`index`)的子项中，在索引为`column`的列之前插入`count`列；如果成功，则返回`true`；重新实现时必须调用`beginInsertColumns()`和`endInsertColumns()` |
 | `removeColumns(column,count,index)`     | 在指定项(索引为`index`)的子项中，从索引为`column`的列开始删除`count`列；如果成功，则返回`true`；重新实现时必须调用`beginRemoveColumns()`和`endRemoveColumns()` |
   | **树模型**                              |                                                              |
-| `index(row,column,index)`               | 返回指定项(索引为`index`)的子项中，行号为`row`、列号为`column`的项的索引(`QModelIndex`类型) |
+  | `index(row,column,index)`               | 返回指定项(索引为`index`)的子项中，行号为`row`、列号为`column`的项的索引(`QModelIndex`类型) |
   | `parent(index)`                         | 返回参数`index`所指项的父项索引(`QModelIndex`类型)           |
   
   ​	*`QList`在通常情况下能提供比`QVector`更好的性能，而对在中间进行插入和删除操作更是如此。对于真正的大列表，如果需要在中间进行插入和删除操作，`QLinkedList`是个更好的选择。*
