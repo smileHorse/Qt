@@ -346,28 +346,373 @@
 
   ### 1.2 自定义表格模型
 
-  ### 1.3 `QStandardItemModel`和自定义模型的比较
+  ​	创建一个`QAbstractTableModel`派生类，就像在Qt的模型/视图架构中所有的`QAbstractItemModel`派生类一样，必须实现一组特定的函数，以使得我们的模型派生类的`API`与架构兼容，而且可以应用在任何需要这种模型的地方。
 
-  ​	当我们使用`QStandardItemModel`或一个`QStandardItemModel`的子类来代表数据时，所有的数据项都保存为`QStandardItem`项，或自定义的`QStandardItem`子类。
+  ​	`QAbstractItemModel`派生类在几种不同情况下必须实现的方法，如下表所示：
 
-  ​	从概念上说，`QStandardItem`对象的定位介于视图部件加上模型的方式与便利窗体和内置模型部件的方式之间。使用`QStandardItemModel`要比创建自定义模型容易一些，又要比便利窗体部件更灵活，因为我们经常能直接使用`QStandardItemModel`，甚至在需要子类化`QStandardItemModel`的时候，通常仅仅添加少量的方法就可以了。另一个喜欢`QStandardItemModel`的因素是，它使用一个更加熟悉的基于项的`API`而不是自定义模型的基于索引的`API`。
-
-  ​	`QStandardItem`提供了丰富的`API`接口，可以使得`QStandardItem`对象非常方便的去直接使用。一个`QStandardItem`对象的最常用函数是提供项的背景色(`background color`)、是否能选择(`checkabliity`)、选中状态(`checked status`)、是否可编辑(`editability`)、字体(`font`)、前景色(`foreground color`)、图标(`icon`)、状态提示(`status tip`)、文本(`text`)、文本对齐方式(`text alignment`)和工具提示(`tooltip`)的属性的获取和设定方法。额外的数据可以保存在`QStandardItem`对象的未使用的角色中，例如`Qt::UserRole`、`Qt::UserRole + 1`诸如此类。我们甚至可以把`QStandardItem`对象从`QDataStream`流中读入或者输出到`QDataStream`流中。
-
-  ​	`QStandardItem`对象为所有的便利性和强大功能所付出的代价是内存消耗，或者还有操作速度。一个自定义模型获取根本不需要存储每个单独的项，或者仅需一些像字符串或数字的轻量级的项。
-
-  ​	在所有的情况下，使用`QStandardItemModel`和`QStandardItem`，或它们的派生类通常是最容易和最快捷的方法，至少一开始是这样的。使用这些类允许我们快速地完成一个可工作的原型程序。如果过些时候发现内存消耗或操作速度不令人满意，我们就可以考虑创建一个自定义的模型来代替它。
-
-  ​	那些数据项是轻量级的、不需要那么多`QStandardItem`类提供的特性的，以及数据项特别多的应用程序是最可能从自定义模型中获得好处的。并且，对于树模型，`QStandardItemModel`的`API`无法提供我们用自定义模型可以实现的那么多功能。
-
-  ​	创建自定义列表和表格模型比较简单，因此它们是在大数据集的情况下潜在地获取性能优势的一个方法。自定义树模型需要做相当多的工作，并且要处理正确是很复杂的，但是它对于仅仅是为了获取额外的、只有用自定义模型才能提供的功能而言可能是必要的。例如，经常性的在树中移动项(包括其子项，递归)，当然，这对于我们创建的特别数据集而言是有意义的。
-
+  | 方法                                    | 说明                                                         |
+| --------------------------------------- | ------------------------------------------------------------ |
+  | **所有模型**                            |                                                              |
+| `data(index,role)`                      | 返回所属模型的指定项(索引为`index`)的角色(`role`, `Qt::ItemDataRole`类型)所对应的的`QVariant`类型数据值 |
+  | `flags(index)`                          | 返回表示指定项(索引为`index`)是否可用、是否有复选框、是否可编辑、是否可选择等状态的一个或多个`Qt::ItemFlag`类型值的按位或 |
+| `headerData(sect,orient,role)`          | 返回由参数`sect`所指行(当`orient`为`Qt::Vertial`时)或列(当`orient`为`Qt::Horizontal`时)处参数`role`所指角色的`QVariant`类型的表头值 |
+  | `rowCount(index)`                       | 返回以参数`index`为父项的那些项的行数                        |
+| **表格和树模型**                        |                                                              |
+  | `columnCount(index)`                    | 返回以参数`index`为父项的那些项的列数，通常对于整个模型来说是常量 |
+| **所有可编辑的模型**                    |                                                              |
+  | `setData(index,value,role)`             | 设置指定项(索引为`index`)的指定角色(`role`)对应的数据值为`value`，如果成功则返回`true`并且发出`dataChanged()`信号 |
+| `setHeaderData(sect,orient,value,role)` | 设置由参数`sect`所指行(当`orient`为`Qt::Vertial`时)或列(当`orient`为`Qt::Horizontal`时)处参数`role`所指角色对应的表头值为`value`，如果设置成功，则返回true并且发出`headerDataChanged()`信号 |
+  | **所有可添加/删除行的模型**             |                                                              |
+| `insertRows(row,count,index)`           | 在指定项(索引为`index`)的子项中，在索引为`row`的行之前插入`count`行；重新实现时必须调用`beginInsertRows()`和`endInsertRows()` |
+  | `removeRows(row,count,index)`           | 在指定项(索引为`index`)的子项中，从索引为`row`的行开始删除`count`行；如果成功，则返回`true`；重新实现时必须调用`beginRemoveRows()`和`endRemoveRows()` |
+| **可添加、删除列的表格和树模型**        |                                                              |
+  | `insertColumns(column,count,index)`     | 在指定项(索引为`index`)的子项中，在索引为`column`的列之前插入`count`列；如果成功，则返回`true`；重新实现时必须调用`beginInsertColumns()`和`endInsertColumns()` |
+| `removeColumns(column,count,index)`     | 在指定项(索引为`index`)的子项中，从索引为`column`的列开始删除`count`列；如果成功，则返回`true`；重新实现时必须调用`beginRemoveColumns()`和`endRemoveColumns()` |
+  | **树模型**                              |                                                              |
+| `index(row,column,index)`               | 返回指定项(索引为`index`)的子项中，行号为`row`、列号为`column`的项的索引(`QModelIndex`类型) |
+  | `parent(index)`                         | 返回参数`index`所指项的父项索引(`QModelIndex`类型)           |
   
-
+  ​	*`QList`在通常情况下能提供比`QVector`更好的性能，而对在中间进行插入和删除操作更是如此。对于真正的大列表，如果需要在中间进行插入和删除操作，`QLinkedList`是个更好的选择。*
+  
+  ​	`Qt::ItemDataRole`枚举类型，如下表所示：
+  
+  | 枚举值                          | 说明                                                         |
+  | ------------------------------- | ------------------------------------------------------------ |
+  | `Qt::AccessibleDescriptionRole` | 关于辅助特性支持的描述内容                                   |
+  | `Qt::AccessibleTextRole`        | 辅助工具(比如屏幕阅读器)所使用的文本内容                     |
+  | `Qt::BackgroundRole`            | x渲染数据时所使用的的背景画刷                                |
+  | `Qt::CheckStateRole`            | s数据项的复选状态                                            |
+  | `Qt::DecorationRole`            | s数据的代表图标                                              |
+  | `Qt::DisplayRole`               | j将要表达的数据显示成文本                                    |
+  | `Qt::EditRole`                  | y宜于编辑格式的数据                                          |
+  | `Qt::FontRole`                  | 渲染数据为文本时所使用的字体                                 |
+  | `Qt::ForegroundRole`            | 渲染数据时所使用的的前景画刷                                 |
+  | `Qt::SizeHintRole`              | 数据的尺寸大小提示                                           |
+  | `Qt::StatusTipRole`             | 数据的状态栏提示内容                                         |
+  | `Qt::TextAlignmentRole`         | 渲染数据为文本时文本使用的对齐方式                           |
+  | `Qt::ToolTipRole`               | 数据的工具提示                                               |
+  | `Qt::UserRole`                  | 可存储自定义数据的角色；更多的数据可存储在`Qt::UserRole + 1`等角色中 |
+  | `Qt::WhatsThisRole`             | 数据的"这是什么?"文本内容                                    |
+  
+  `Qt::ItemFlag`枚举类型，如下表所示：
+  
+  | 枚举值                    | 说明                                                         |
+  | ------------------------- | ------------------------------------------------------------ |
+  | `Qt::ItemIsDragEnabled`   | 可拖动标志                                                   |
+  | `Qt::ItemIsDropEnabled`   | 可放置标志                                                   |
+  | `Qt::ItemIsEditable`      | 可编辑标志                                                   |
+  | `Qt::ItemIsEnabled`       | 可与用户交互                                                 |
+  | `Qt::ItemIsSelectable`    | 可选择标志                                                   |
+  | `Qt::ItemIsTristate`      | 具有三种(而非两种)复选状态标志：选中、未选中、未改变         |
+  | `Qt::ItemIsUserCheckable` | 具有用户可操作的复选框标志                                   |
+  | `Qt::NoItemFlags`         | 无任何标志。如果这是唯一的标志，则该项不可复选、不可选择、不可编辑等 |
+  
+  #### `flags()`
+  
+  ~~~c++
+  Qt::ItemFlags TableModel::flags(const QModelIndex &index) const
+  {
+  	Qt::ItemFlags theFlags = QAbstractTableModel::flags(index);
+  	if (index.isValid())
+  	{
+  		theFlags |= Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled;
+  	}
+  	return theFlags;
+  }
+  ~~~
+  
+  ​	事实上，基类的实现返回了`Qt::ItemIsSelectable | Qt::ItemIsEnabled`，因此这里只需加上`Qt::ItemIsEditable`即可，但我们更倾向于明确的表达出我们的意图。
+  
+  #### `data()`
+  
+  ~~~c++
+  QVariant TableModel::data(const QModelIndex &index, int role /*= Qt::DisplayRole*/) const
+  {
+  	if (!index.isValid() || 
+  		index.row() < 0 || index.row() > zipcodes.count() ||
+  		index.column() < 0 || index.column() > MaxColumns)
+  	{
+  		return QVariant();
+  	}
+  
+  	const ZipcodeItem& item = zipcodes.at(index.row());
+  	if (role == Qt::SizeHintRole)
+  	{
+  		QStyleOptionComboBox option;
+  		switch (index.column())
+  		{
+  		case Zipcode:
+  			{
+  				option.currentText = QString::number(MaxZipcode);
+  				const QString header = headerData(Zipcode, Qt::Horizontal, Qt::DisplayRole).toString();
+  				if (header.length() > option.currentText.length())
+  				{
+  					option.currentText = header;
+  				}
+  				break;
+  			}
+  		case PostOffice:
+  			option.currentText = item.postOffice;
+  			break;
+  		case County:
+  			option.currentText = item.county;
+  			break;
+  		case State:
+  			option.currentText = item.state;
+  			break;
+  		default:
+  			Q_ASSERT(false);
+  		}
+  		QFontMetrics fontMetrics(data(index, Qt::FontRole).value<QFont>());
+  		option.fontMetrics = fontMetrics;
+  		QSize size(fontMetrics.width(option.currentText), fontMetrics.height());
+  		return qApp->style()->sizeFromContents(QStyle::CT_ComboBox, &option, size);
+  	}
+  	if (role == Qt::DisplayRole || role == Qt::EditRole)
+  	{
+  		switch (index.column())
+  		{
+  		case Zipcode: return item.zipcode;
+  		case PostOffice: return item.postOffice;
+  		case County: return item.county;
+  		case State: return item.state;
+  		default: Q_ASSERT(false);
+  		}
+  	}
+  	return QVariant();
+  }
+  ~~~
+  
+  ​	`data()`方法是所有关注数据和元数据的项被访问的途径。这个方法与`headerData()`方法不需要调用对应的基类的方法来处理未想到的情况，我们必须为那些没有亲自处理的情况返回一个无效的`QVariant`变量。为没有处理的情况返回任一无效的`QVariant`变量以外的值，将导致程序无法工作。
+  
+  ​	Qt的模型/视图架构认为`data()`和`headerData()`方法或返回一个可使用的有效的`QVariant`变量，或返回一个无效的`QVariant`变量。在这种情况下，Qt尽可能的提供一个它需要的变量。如果返回一个并不想要的有效的`QVariant`变量，例如，一个空字符串或0，Qt就会使用这个返回值进而出现混乱。
+  
+  #### `headerData()`
+  
+  ~~~c++
+  QVariant TableModel::headerData(int section, Qt::Orientation orientation, int role /*= Qt::DisplayRole*/) const
+  {
+  	if (role != Qt::DisplayRole)
+  	{
+  		return QVariant();
+  	}
+  	if (orientation == Qt::Horizontal)
+  	{
+  		switch (section)
+  		{
+  		case Zipcode: return "Zipcode";
+  		case PostOffice: return "PostOffice";
+  		case County: return "County";
+  		case State: return "State";
+  		default: Q_ASSERT(false);
+  		}
+  	}
+  	return section + 1;
+  }
+  ~~~
+  
+  #### rowCount()
+  
+  ~~~c++
+  int TableModel::rowCount(const QModelIndex &parent /*= QModelIndex()*/) const
+  {
+  	return parent.isValid() ? 0 : zipcodes.count();
+  }
+  ~~~
+  
+  ​	表格和列表模型项有一个无效的模型索引作为它们的父项，因此如果参数`index`是无效的，就返回表格或列表中所有的行数。如果参数`index`是有效的，即要返回指定项的子项行数(只对树模型有意义)，因此在这种情况，对表格或列表模型都必须返回0。
+  
+  #### `columnCount()`
+  
+  ~~~c++
+  int TableModel::columnCount(const QModelIndex &parent /*= QModelIndex()*/) const
+  {
+  	return parent.isValid() ? 0 : MaxColumns;
+  }
+  ~~~
+  
+  ​	如果参数`index`是无效的，就返回表格中所有的列数。对于列表模型，应该从`QAbstractListModel`派生，不需要实现这个方法，因为基类提供的就足够了。如果`index`是有效的，则是指返回指定的某项的子项列数，因此这种情况必须返回0。
+  
+  #### `setData()`
+  
+  ~~~c++
+  bool TableModel::setData(const QModelIndex &index, const QVariant &value, int role /*= Qt::EditRole*/)
+  {
+  	if (!index.isValid() || 
+  		index.row() < 0 || index.row() > zipcodes.count() ||
+  		index.column() < 0 || index.column() > MaxColumns)
+  	{
+  		return false;
+  	}
+  
+  	ZipcodeItem& item = zipcodes[index.row()];
+  	switch (index.column())
+  	{
+  	case Zipcode:
+  		{
+  			bool ok;
+  			int zipcode = value.toInt(&ok);
+  			if (!ok || zipcode < MinZipcode || zipcode > MaxZipcode)
+  			{
+  				return false;
+  			}
+  			item.zipcode = zipcode;
+  			break;
+  		}
+  	case PostOffice:
+  		item.postOffice = value.toString();
+  		break;
+  	case County:
+  		item.county = value.toString();
+  		break;
+  	case State:
+  		item.state = value.toString();
+  		break;
+  	default:
+  		Q_ASSERT(false);
+  	}
+  	emit dataChanged(index, index);
+  	return true;
+  }
+  ~~~
+  
+  ​	我们可能想要编辑过程有一个关联效果，并且模型/视图架构在一定程度通过发送指定矩形区域的左上和右下索引的`dataChanged()`信号来支持这种效果。
+  
+  ​	`setHeaderData()`通过返回`false`来阻止用户编辑行和列表头。如果要允许对表头进行编辑则必须发射带有方向和受影响的部分(行或列)的起始点和结束点的`headerDataChanged()`信号来实现，并返回`true`。
+  
+  #### `insertRows()`
+  
+  ~~~c++
+  bool TableModel::insertRows(int row, int count, const QModelIndex &parent /*= QModelIndex()*/)
+  {
+  	beginInsertRows(parent, row, row + count - 1);
+  	for (int i = 0; i < count; ++i)
+  	{
+  		zipcodes.insert(row, ZipcodeItem());
+  	}
+  	endInsertRows();
+  	return true;
+  }
+  ~~~
+  
+  ​	一个可删除行的模型必须实现`insertRows()`和`removeRows()`，可删除列的模型必须实现`insertColumns()`和`removeColumns()`。如果参数`row`为0，那么新行将插入到所有已有行之前，如果`row == rowCount()`，那么新行将被追加到所有行之后。
+  
+  ​	在结构上，所有的`insertRows()`的重新实现都遵循相同模式：在对模型进行任何变更之前先调用`beginInsertRows()`，然后是执行插入操作的代码，最后在所有对模型的变更都处理完后调用`endInsertRows()`。如果有任何更改，这个方法必须返回`true`。
+  
+  ​	这里的`beginInsertRows()`和`endInsertRows()`可用于任何表格或列表模型的派生类。树模型要稍微复杂些。
+  
+  #### `removeRows()`
+  
+  ~~~c++
+  bool TableModel::removeRows(int row, int count, const QModelIndex &parent /*= QModelIndex()*/)
+  {
+  	beginRemoveRows(parent, row, row + count - 1);
+  	for (int i = 0; i < count; ++i)
+  	{
+  		zipcodes.removeAt(row);
+  	}
+  	endRemoveRows();
+  	return true;
+  }
+  ~~~
+  
+  ​	这个方法和`insertRows()`具有相同的结构，只是它调用的是`beginRemoveRows()`和`endRemoveRows()`。
+  
+  
+  
+  模型中数据发生变化时，需要调用`beginResetModel()`和`endResetModel()`。
+  
+  ### 1.3 `QStandardItemModel`和自定义模型的比较
+  
+  ​	当我们使用`QStandardItemModel`或一个`QStandardItemModel`的子类来代表数据时，所有的数据项都保存为`QStandardItem`项，或自定义的`QStandardItem`子类。
+  
+  ​	从概念上说，`QStandardItem`对象的定位介于视图部件加上模型的方式与便利窗体和内置模型部件的方式之间。使用`QStandardItemModel`要比创建自定义模型容易一些，又要比便利窗体部件更灵活，因为我们经常能直接使用`QStandardItemModel`，甚至在需要子类化`QStandardItemModel`的时候，通常仅仅添加少量的方法就可以了。另一个喜欢`QStandardItemModel`的因素是，它使用一个更加熟悉的基于项的`API`而不是自定义模型的基于索引的`API`。
+  
+  ​	`QStandardItem`提供了丰富的`API`接口，可以使得`QStandardItem`对象非常方便的去直接使用。一个`QStandardItem`对象的最常用函数是提供项的背景色(`background color`)、是否能选择(`checkabliity`)、选中状态(`checked status`)、是否可编辑(`editability`)、字体(`font`)、前景色(`foreground color`)、图标(`icon`)、状态提示(`status tip`)、文本(`text`)、文本对齐方式(`text alignment`)和工具提示(`tooltip`)的属性的获取和设定方法。额外的数据可以保存在`QStandardItem`对象的未使用的角色中，例如`Qt::UserRole`、`Qt::UserRole + 1`诸如此类。我们甚至可以把`QStandardItem`对象从`QDataStream`流中读入或者输出到`QDataStream`流中。
+  
+  ​	`QStandardItem`对象为所有的便利性和强大功能所付出的代价是内存消耗，或者还有操作速度。一个自定义模型获取根本不需要存储每个单独的项，或者仅需一些像字符串或数字的轻量级的项。
+  
+  ​	在所有的情况下，使用`QStandardItemModel`和`QStandardItem`，或它们的派生类通常是最容易和最快捷的方法，至少一开始是这样的。使用这些类允许我们快速地完成一个可工作的原型程序。如果过些时候发现内存消耗或操作速度不令人满意，我们就可以考虑创建一个自定义的模型来代替它。
+  
+  ​	那些数据项是轻量级的、不需要那么多`QStandardItem`类提供的特性的，以及数据项特别多的应用程序是最可能从自定义模型中获得好处的。并且，对于树模型，`QStandardItemModel`的`API`无法提供我们用自定义模型可以实现的那么多功能。
+  
+  ​	创建自定义列表和表格模型比较简单，因此它们是在大数据集的情况下潜在地获取性能优势的一个方法。自定义树模型需要做相当多的工作，并且要处理正确是很复杂的，但是它对于仅仅是为了获取额外的、只有用自定义模型才能提供的功能而言可能是必要的。例如，经常性的在树中移动项(包括其子项，递归)，当然，这对于我们创建的特别数据集而言是有意义的。
+  
+  
+  
   ## 2、 树模型
-
+  
   ## 3、 委托
-
+  
+  ​	所有的Qt标准视图类(`QListView`、`QTableView`、`QColumnView`、`QTreeView`和`QComboBox`)都为要访问的数据提供了一个`QStyledItemDelegate`进行显示和编辑(对于可编辑模型)。
+  
+  ​	使用自定义委托，能让我们对视图中显示的项的外观进行完全的控制，或者允许对可编辑项提供自己的编辑器，或者二者兼具。广义的将，有三种使用委托的方式：与数据类型相关的编辑器、与数据类型相关的委托、与模型相关的委托。
+  
+  ​	Qt的内置委托对象使用特定的窗口部件来对特定的数据类型进行编辑。可以把Qt使用的默认窗口部件改为自己选择的其他内置窗口部件或者自定义窗口部件。这种方法很强大，它将影响所有视图中的相关数据类型的可编辑项。但因为这个原因，它也是最不灵活的方法，尤其是与使用自定义委托相比。
+  
+  ### 3.1 与数据类型相关的编辑器
+  
+  ​	如果想提供一个仅仅取决于项类型的全局编辑器，可以创建一个`QItemEditorFactory对象，并且注册一个特定的窗口部件来作为该特定类型的编辑器。例如：`
+  
+  ~~~c++
+  QItemEditorFactory* editorFactory = new QItemEditorFactory;
+  QItemEditorCreatorBase* numberEditorCreator = new QStandardItemEditorCreator<SpinBox>();
+  editorFactory->registerEditor(QVariant::Double, numberEditorCreator);
+  editorFactory->registerEditor(QVariant::Int, numberEditorCreator);
+  QItemEditorFactory::setDefaultFactory(editorFactory);
+  ~~~
+  
+  ​	这里为所有值为双精度或整型的可编辑项使用自定义的`SpinBox`部件作为编辑器。`SpinBox`的构造函数为：
+  
+  ~~~c++
+  explicit SpinBox(QWidget* parent = 0)
+      : QDoubleSpinBox(parent)
+  {
+  	setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+      setDecimals(3);
+      setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+  }
+  ~~~
+  
+  *这里不能使用`std::numeric_limits<T>::min()`，因为对于浮点型数据来说，它将返回一个大于0的最小值(小数)，而不是最小的负数。对整型则返回最小的负数。*
+  
+  ​	遗憾的是，像这样注册的编辑器和`QStandardItem`中的那些非字符串类型的数据不能很好地一起工作，至少不能直接使用。这是因为在`QStandardItem`项中是以`QString`类型来保存数据的，所以当开始编辑时供编辑的数据是`QString`类型的。这就不能触发使用注册的编辑器`SpinBox`。解决方案也很简单：只要确保从`QStandardItemModel`中存储和获取数据时使用的是`Qt::EditRole`，并且使用`QStandardItem`的派生类来保存数据。例如：
+  
+  ~~~c++
+  class StandardItem : public QStandardItem
+  {
+  public:
+  	explicit StandardItem(const double value) : QStandardItem()
+  	{
+  		setData(value, Qt::EditRole);
+  	}
+  
+  	QStandardItem* clone() const
+  	{ return new StandardItem(data(Qt::EditRole).toDouble()); }
+  
+  	QVariant data(int role = Qt::UserRole + 1) const
+  	{
+  		if(role == Qt::DisplayRole)
+  		{ return QString("%1").arg(QStandardItem::data(Qt::EditRole).toDouble(), 0, 'f', 3); }
+  		
+  		if(role == Qt::TextAlignmentRole)
+  		{ return static_cast<int>(Qt::AlignVCenter | Qt::AlignRight); }
+  
+  		return QStandardItem::data(role);
+  	}
+  }
+  ~~~
+  
+  ​	在构造函数中使用`Qt::EditRole`角色来存储双精度数据。还提供了一个`clone()`方法，以确保如果模型复制一个项的话它能正确的创建一个`StandardItem`实例而非普通的`QStandardItem`实例。
+  
+  ​	`QStandardItem::data()`方法和`QAbstractItemModel::data()`方法不同；具体地说，它是使用了基类版本的传统C++方法，所以对于未处理的情况，它应该总是返回调用基类的返回值，而不是无效的`QVariant`。
+  
+  ### 3.2 与数据类型相关的委托
+  
+  
+  
+  ### 3.3 与模型相关的委托
+  
   ## 4、 视图
-
+  
   
