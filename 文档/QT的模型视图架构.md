@@ -10,23 +10,23 @@
 
 ​	关于模型、视图、委托以及其背后的数据之间的关系，如下图所示：
 
-​	![1559699099552](E:\code\GitHub\Qt\文档\images\1559699099552.png)
+​	![1559699099552](.\images\1559699099552.png)
 
 ​	*在一些环境中，特别是对于那些数据集比较小的应用程序，假如它们使用的数据在任何时候仅仅显示在一个部件中，那么选择便利窗口部件比较合适。*
 
-​	尽管有统一的API，仍然有两种不同类型的模型：有行列特性的表格模型，有父子关系的树模型。
+​	尽管有统一的`API`，仍然有两种不同类型的模型：**有行列特性的表格模型**，**有父子关系的树模型**。
 
 ​	除了考虑表格模型和树模型之外，还有三类模型可能用到：
 
 - QT预定义的一些模型，如`QStringListModel`、`QDirModel`、还有`QDirModel`的后继者`QFileSystemModel`。这些模型可以直接使用并且只需做很少的工作。
 
-- `QStandardItemModel`,它是一个可被当做列表模型、表格模型或树模型来使用的通用模型。它提供了一个基于项的API。对于那些能够直接把数据恰好地填充入列表、表格或树模型的各个数据项中，并能够直接使用或仅需做微小改动即可的情况，使用`QStandardItemModel`是理想的选择。
+- `QStandardItemModel`,它是一个可被当做列表模型、表格模型或树模型来使用的通用模型。它提供了一个基于项的`API`。对于那些能够直接把数据恰好地填充入列表、表格或树模型的各个数据项中，并能够直接使用或仅需做微小改动即可的情况，使用`QStandardItemModel`是理想的选择。
 
 - 最后一种是从`QAbstractItemModel`或`QAbstractListModel` 、`QAbstractTableModel`派生而来的自定义模型。如果想达到最佳的性能，或者该模型不符合基于项的特征，那就需要使用自定义模型。
 
   一些QT模型的层次结构如下图所示：
 
-  ![1559699874831](E:\code\GitHub\Qt\文档\images\1559699874831.png)
+  ![1559699874831](.\images\1559699874831.png)
 
   使用`QStandardItemModel`的话，就不需要再创建自定义的模型了。但它有两个潜在的缺点：
 
@@ -42,7 +42,7 @@
 
   ### 1.1 用于表格的`QStandardItemModel`
 
-  	#### 使用模型的QComboBox
+  #### 使用模型的`QComboBox`
 
   ~~~c++
   void MainWindow::createComboBoxModel(QComboBox *comboBox, int column)
@@ -178,7 +178,7 @@
 
   ​	`QStandardItemModel`类提供了操作表格数据及与视图交互的所有功能。这个例子中派生类只增加了加载数据和保存数据的功能。
 
-  ​	加载数据：
+  ​	**加载数据：**
 
   ~~~c++
   void StandardTableModel::load(const QString& filename /*= QString()*/)
@@ -241,7 +241,7 @@
   }
   ~~~
 
-  ​	保存数据：
+  ​	**保存数据：**
 
   ~~~c++
   void StandardTableModel::save(const QString& filename /*= QString()*/)
@@ -382,11 +382,11 @@
   | ------------------------------- | ------------------------------------------------------------ |
   | `Qt::AccessibleDescriptionRole` | 关于辅助特性支持的描述内容                                   |
   | `Qt::AccessibleTextRole`        | 辅助工具(比如屏幕阅读器)所使用的文本内容                     |
-  | `Qt::BackgroundRole`            | x渲染数据时所使用的的背景画刷                                |
-  | `Qt::CheckStateRole`            | s数据项的复选状态                                            |
-  | `Qt::DecorationRole`            | s数据的代表图标                                              |
-  | `Qt::DisplayRole`               | j将要表达的数据显示成文本                                    |
-  | `Qt::EditRole`                  | y宜于编辑格式的数据                                          |
+  | `Qt::BackgroundRole`            | 渲染数据时所使用的的背景画刷                                 |
+  | `Qt::CheckStateRole`            | 数据项的复选状态                                             |
+  | `Qt::DecorationRole`            | 数据的代表图标                                               |
+  | `Qt::DisplayRole`               | 将要表达的数据显示成文本                                     |
+  | `Qt::EditRole`                  | 宜于编辑格式的数据                                           |
   | `Qt::FontRole`                  | 渲染数据为文本时所使用的字体                                 |
   | `Qt::ForegroundRole`            | 渲染数据时所使用的的前景画刷                                 |
   | `Qt::SizeHintRole`              | 数据的尺寸大小提示                                           |
@@ -516,9 +516,9 @@
   #### rowCount()
   
   ~~~c++
-  int TableModel::rowCount(const QModelIndex &parent /*= QModelIndex()*/) const
+  int TableModel::rowCount(const QModelIndex &index /*= QModelIndex()*/) const
   {
-  	return parent.isValid() ? 0 : zipcodes.count();
+  	return index.isValid() ? 0 : zipcodes.count();
   }
   ~~~
   
@@ -527,9 +527,9 @@
   #### `columnCount()`
   
   ~~~c++
-  int TableModel::columnCount(const QModelIndex &parent /*= QModelIndex()*/) const
+  int TableModel::columnCount(const QModelIndex &index /*= QModelIndex()*/) const
   {
-  	return parent.isValid() ? 0 : MaxColumns;
+  	return index.isValid() ? 0 : MaxColumns;
   }
   ~~~
   
@@ -648,7 +648,7 @@
   
   ​	所有的Qt标准视图类(`QListView`、`QTableView`、`QColumnView`、`QTreeView`和`QComboBox`)都为要访问的数据提供了一个`QStyledItemDelegate`进行显示和编辑(对于可编辑模型)。
   
-  ​	使用自定义委托，能让我们对视图中显示的项的外观进行完全的控制，或者允许对可编辑项提供自己的编辑器，或者二者兼具。广义的将，有三种使用委托的方式：与数据类型相关的编辑器、与数据类型相关的委托、与模型相关的委托。
+  ​	使用自定义委托，能让我们对视图中显示的项的外观进行完全的控制，或者允许对可编辑项提供自己的编辑器，或者二者兼具。广义的将，有三种使用委托的方式：**与数据类型相关的编辑器**、**与数据类型相关的委托**、**与模型相关的委托**。
   
   ​	Qt的内置委托对象使用特定的窗口部件来对特定的数据类型进行编辑。可以把Qt使用的默认窗口部件改为自己选择的其他内置窗口部件或者自定义窗口部件。这种方法很强大，它将影响所有视图中的相关数据类型的可编辑项。但因为这个原因，它也是最不灵活的方法，尤其是与使用自定义委托相比。
   
@@ -711,10 +711,300 @@
   
   ### 3.2 与数据类型相关的委托
   
+  ​	一个避免重复和提高代码复用性的方法，是为特定的行或列创建数据类型相关的委托。
+  
+  ##### 3.2.1 一个只读的列或行委托
+  
+  创建模型、视图和委托的代码：
+  
+  ~~~c++
+      QFileSystemModel *model = new QFileSystemModel;
+      model->setRootPath(QDir::homePath());
+      QModelIndex index = model->index(QDir::homePath());
+  
+      QTreeView *view = new QTreeView;
+      view->setItemDelegateForColumn(3, new DateTimeDelegate);
+  
+      view->setModel(model);
+      view->setColumnHidden(1, true);
+      view->setColumnHidden(2, true);
+      view->scrollTo(index);
+      view->expand(index);
+      view->setCurrentIndex(index);
+  ~~~
+  
+  因为我们只想改变它要处理的项的外观，而不是行为，所以需要重新实现构造函数和`paint()`方法。
+  
+  **`paint()`**
+  
+  ~~~c++
+  void DateTimeDelegate::paint(QPainter *painter,
+          const QStyleOptionViewItem &option,
+          const QModelIndex &index) const
+  {
+      const QFileSystemModel *model =
+              qobject_cast<const QFileSystemModel*>(index.model());
+      Q_ASSERT(model);
+      const QDateTime &lastModified = model->lastModified(index);
+      painter->save();
+      painter->setRenderHints(QPainter::Antialiasing|
+                              QPainter::TextAntialiasing);
+  
+      if (option.state & QStyle::State_Selected)
+          painter->fillRect(option.rect, option.palette.highlight());
+      const qreal diameter = qMin(option.rect.width(),
+                                  option.rect.height());
+      const QRectF rect = clockRect(option.rect, diameter);
+      drawClockFace(painter, rect, lastModified);
+      drawClockHand(painter, rect.center(), diameter / 3.5,
+                    ((lastModified.time().hour() +
+                     (lastModified.time().minute() / 60.0))) * 30);
+      drawClockHand(painter, rect.center(), diameter / 2.5,
+                    lastModified.time().minute() * 6);
+      drawDate(painter, option, diameter, lastModified);
+      painter->restore();
+  }
+  ~~~
+  
+  **`clockRect()`**
+  
+  ~~~c++
+  QRectF DateTimeDelegate::clockRect(const QRectF &rect,
+                                     const qreal &diameter) const
+  {
+      QRectF rectangle(rect);
+      rectangle.setWidth(diameter);
+      rectangle.setHeight(diameter);
+      return rectangle.adjusted(1.5, 1.5, -1.5, -1.5);
+  }
+  ~~~
+  
+  ​	这个方法基于给定的矩形区域参数返回一个矩形，保持相同的x和y坐标，但根据给定的直径缩小为一个正方形，最后再缩小一些以获得一些空白边距。
+  
+  ​	`QRect::adjusted()`方法返回一个新的矩形区域，这个矩形区域坐标的左上角和右下角按照给定的值进行调整。比如这个例子中，左上角坐标向右、向下移动了1.5个像素，右下角则向左、向上移动了1.5个像素。
+  
+  **`drawClockFace()`**
+  
+  ~~~c++
+  void DateTimeDelegate::drawClockFace(QPainter *painter,
+          const QRectF &rect, const QDateTime &lastModified) const
+  {
+      const int Light = 120;
+      const int Dark = 220;
+  
+      int shade = lastModified.date() == QDate::currentDate()
+                  ? Light : Dark;
+      QColor background(shade, shade,
+                        lastModified.time().hour() < 12 ? 255 : 175);
+      painter->setPen(background);
+      painter->setBrush(background);
+      painter->drawEllipse(rect);
+      shade = shade == Light ? Dark : Light;
+      painter->setPen(QColor(shade, shade,
+                      lastModified.time().hour() < 12 ? 175 : 255));
+  }
+  ~~~
+  
+  
+  
+  **`drawClockHand()`**
+  
+  ~~~c++
+  void DateTimeDelegate::drawClockHand(QPainter *painter,
+          const QPointF &center, const qreal &length,
+          const qreal &degrees) const
+  {
+      const qreal angle = AQP::radiansFromDegrees(
+              (qRound(degrees) % 360) - 90);
+      const qreal x = length * std::cos(angle);
+      const qreal y = length * std::sin(angle);
+      painter->drawLine(center, center + QPointF(x, y));
+  }
+  ~~~
+  
+  
+  
+  **`drawDate()`**
+  
+  ~~~c++
+  void DateTimeDelegate::drawDate(QPainter *painter,
+          const QStyleOptionViewItem &option, const qreal &diameter,
+          const QDateTime &lastModified) const
+  {
+      painter->setPen(option.state & QStyle::State_Selected
+                      ? option.palette.highlightedText().color()
+                      : option.palette.windowText().color());
+  #ifndef DEBUG
+      QString text = lastModified.date().toString(Qt::ISODate);
+  #else
+      QString text = lastModified.toString(Qt::ISODate);
+  #endif
+      painter->drawText(option.rect.adjusted(
+              qRound(diameter * 1.2), 0, 0, 0), text,
+              QTextOption(Qt::AlignVCenter|Qt::AlignLeft));
+  }
+  ~~~
+  
+  ​	`QTextOption`类用来存储一段富文本的对齐方式、换行模式、制表符位置以及其他各种格式标记。在绘制文字时最常用的是提供想要的文本对齐方式以及作用于多行文本的换行模式。
+  
+  ​	这部分工作和`Qt`中的大多数绘制一样，主要涉及到使用合适的颜色以及尺寸和位置的数学运算。
+  
+  ##### 3.2.2 一个可编辑的列或行委托
+  
   
   
   ### 3.3 与模型相关的委托
   
+  ​	如果我们不创建大量的模型，那么在需要时创建自定义模型相关的委托，而不是创建一组更通用的行或列数据相关的委托，会更方便一些。
+  
+  ​	一种常见的实现委托的情况，是实现`paint()`、`createEditor()`、`setEditorData()`和`setModelData()`方法。自定义委托继承自`QStyledItemDelegate`类。
+  
+  **`paint()`**
+  
+  ~~~c++
+  void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
+  	const QModelIndex &index) const
+  {
+  	if (index.column() == Zipcode)
+  	{
+  		QStyleOptionViewItemV4 opt(option);
+  		initStyleOption(&opt, index);
+  		QString text = QString("%1").arg(opt.text.toInt(), 5, 10, QChar('0'));
+  		
+  		painter->save();
+  		painter->setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+  		if (opt.state & QStyle::State_Selected)
+  		{
+  			painter->fillRect(opt.rect, opt.palette.highlight());
+  			painter->setPen(opt.palette.highlightedText().color());
+  		}
+  		else
+  		{
+  			painter->setPen(opt.palette.windowText().color());
+  		}
+  		painter->drawText(opt.rect.adjusted(0, 0, -3, 0), text, 
+  			QTextOption(Qt::AlignVCenter | Qt::AlignRight));
+  		painter->restore();
+  	}
+  	else
+  	{
+  		QStyledItemDelegate::paint(painter, option, index);
+  	}
+  }
+  ~~~
+  
+  ​	选择自己来绘制邮编`Zipcode`，而把其他数据的绘制留给基类。这些方法中使用了`index.column()`来断定要处理的数据的列。
+  
+  ​	`QStyleOptionViewItem`类是在`Qt4.0`中引入的，在随后的版本中有增补了`QStyleOptionViewItemV2`、`QStyleOptionViewItemV3`和`QStyleOptionViewItemV4`，每个类都增加新的公有成员。使用`QStyleOptionViewItem`也能工作的很好，但使用后续版本，能够利用那些额外的数据成员带来的便利。
+  
+  ​	正确获取后续版本的`QStyleOptionViewItem`方法是依照下面的的模式：创建一个`QStyleOptionViewItem4`（或任何一个需要的版本）对象并把参数(`QStyleOptionViewItem`类型)传递给构造函数，然后调用`QStyleOptionViewItem::initStyleOption()`方法，把新样式选项和要处理的项的模型索引作为参数传递进去。
+  
+  ​	通过获取一个`QStyleOptionViewItemV4`对象，就能访问到它的`text`成员，而不需要使用`index.model()->data(index).toString()`来获取。
+  
+  **`createEditor()`**
+  
+  ~~~c++
+  QWidget* ItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, 
+  	const QModelIndex &index) const
+  {
+  	static QStringList usStates;
+  	if (usStates.isEmpty())
+  	{
+  		usStates << "(Unknown)" << "Alabama" << "Alaska"
+  			<< "Arizona" << "Arkansas" << "California"
+  			<< "Colorado" << "Connecticut" << "Delaware"
+  			<< "District Of Columbia" << "Florida" << "Georgia"
+  			<< "Hawaii" << "Idaho" << "Illinois" << "Indiana"
+  			<< "Iowa" << "Kansas" << "Kentucky" << "Louisiana"
+  			<< "Maine" << "Maryland" << "Massachusetts"
+  			<< "Michigan" << "Minnesota" << "Mississippi"
+  			<< "Missouri" << "Montana" << "Nebraska" << "Nevada"
+  			<< "New Hampshire" << "New Jersey" << "New Mexico"
+  			<< "New York" << "North Carolina" << "North Dakota"
+  			<< "Ohio" << "Oklahoma" << "Oregon" << "Pennsylvania"
+  			<< "Rhode Island" << "South Carolina"
+  			<< "South Dakota" << "State" << "Tennessee" << "Texas"
+  			<< "Utah" << "Vermont" << "Virginia" << "Washington"
+  			<< "West Virginia" << "Wisconsin" << "Wyoming";
+  	}
+  
+  	if (index.column() == Zipcode)
+  	{
+  		return new ZipcodeSpinBox(parent);
+  	}
+  	if (index.column() == State)
+  	{
+  		QComboBox* editor = new QComboBox(parent);
+  		editor->addItems(usStates);
+  		return editor;
+  	}
+  
+  	return QStyledItemDelegate::createEditor(parent, option, index);
+  }
+  ~~~
+  
+  ​	`createEditor()`方法必须判断应该使用哪一个编辑器，然后创建、设置并返回编辑器，从被编辑项的数据中准备好要在编辑器中填充的数据，然后显示给用户。需要注意，如果我们自己创建了一个编辑器，那么有必要传递一个合适的`parent`参数给它，这将确保`Qt`获得该编辑器的所有权，并能在合适的时间删除它。
+  
+  **`setEditorData()`**
+  
+  ~~~c++
+  void ItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+  {
+  	if (index.column() == Zipcode)
+  	{
+  		int value = index.model()->data(index).toInt();
+  		ZipcodeSpinBox* spinBox = qobject_cast<ZipcodeSpinBox*>(editor);
+  		Q_ASSERT(spinBox);
+  		spinBox->setValue(value);
+  	}
+  	else if (index.column() == State)
+  	{
+  		QString state = index.model()->data(index).toString();
+  		QComboBox* comboBox = qobject_cast<QComboBox*>(editor);
+  		Q_ASSERT(comboBox);
+  		comboBox->setCurrentIndex(comboBox->findText(state));
+  	}
+  	else
+  	{
+  		QStyledItemDelegate::setEditorData(editor, index);
+  	}
+  }
+  ~~~
+  
+  ​	一旦编辑器创建完毕，`Qt`的模型/视图架构会调用`setEditorData()`方法，在编辑器显示给用户之前会给我们一个填充编辑器数据的机会。我们必须总是处理那些自己创建的窗口部件，而把那些基类负责的窗口部件的工作交由基类去做。
+  
+  ​	这里用到的逻辑：获取给定模型索引对应的项，把`QWidget`类型的指针转化为一个正确类型的编辑器部件的指针，然后填充编辑器的数据。
+  
+  **`setModelData()`**
+  
+  ~~~c++
+  void ItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, 
+  	const QModelIndex &index) const
+  {
+  	if (index.column() == Zipcode)
+  	{
+  		ZipcodeSpinBox* spinBox = qobject_cast<ZipcodeSpinBox*>(editor);
+  		Q_ASSERT(spinBox);
+  		spinBox->interpretText();
+  		model->setData(index, spinBox->value());
+  	}
+  	else if (index.column() == State)
+  	{
+  		QComboBox* comboBox = qobject_cast<QComboBox*>(editor);
+  		Q_ASSERT(comboBox);
+  		model->setData(index, comboBox->currentText());
+  	}
+  	else
+  	{
+  		QStyledItemDelegate::setModelData(editor, model, index);
+  	}
+  }
+  ~~~
+  
+  ​	如果用户确认编辑完毕，对于我们负责的那些编辑器部件，必须获取编辑器的值，并把它设置为给定模型索引所代表的的项的值。对于其他窗口部件，把工作交由基类去做。
+  
+  ​	对于微调框，调用`interpretText()`方法来确认，如果用户通过输入或删除数字改变了值，而不是通过使用微调按钮，微调框中保存的值应该正确反映用户的修改。
+  
   ## 4、 视图
   
-  
+  ​	如果想以一种不同于任何一种`Qt`内置视图的方式呈现数据项，或者想自定义互相关联的项的外观，这时就需要创建自定义视图了。
