@@ -851,7 +851,217 @@
   
   ##### 3.2.2 一个可编辑的列或行委托
   
+  ​	一个自定义委托可以用来渲染项或编辑项，或二者兼具。对于渲染项，只需要重新实现`paint()`方法。如果想支持编辑，就必须实现下面列出的那些`QStyledItemDelegate API`，至少实现`createEditor()`、`setEditorData()`和`setModelData()`方法。
   
+  ​	基类的`sizeHint()`和`updateEditorGeometry()`实现几乎总是够用了，因此很少需要重新实现它们。通常也不需要重新实现`paint()`方法，特别是如果数据只是简单的纯文本、日期、时间或数字的话。
+  
+  | 方法                                             | 说明                                                         |
+  | ------------------------------------------------ | ------------------------------------------------------------ |
+  | `createEditor(parent,styleOption,index)`         | 为指定模型索引`index`所对应的项创建一个合适的编辑用的窗口部件并返回 |
+  | `paint(painter,styleOption,index)`               | 绘制给定模型索引`index`所对应的项(对于纯文本、日期、时间和数字类型很少有需要去重新实现) |
+  | `setEditorData(editor,index)`                    | 使用给定模型索引`index`所对应的模型项的数据来填充编辑器`editor` |
+  | `setModelData(editor,model,index)`               | 从编辑器`editor`中获取数据并设置为给定模型索引`index`所对应的模型项的数据 |
+  | `sizeHint(styleOption,index)`                    | 返回委托需要的、显示或编辑给定模型索引`index`所代表的项的尺寸 |
+  | `updateEditorGeometry(editor,styleOption,index)` | 为就地编辑(in-place editing)设置编辑器`editor`的尺寸和位置(很少需要重新实现) |
+  
+  ​	在自定义委托中渲染项的时候，可以采取三种方法：
+  
+  - 一种是自己绘制每一项。它的缺点是必须自己处理平台间的差异。
+  
+  - 另一种是使用`Qt`中的`QStyle`类，例如使用`QStyle::drawControl()`、`QStyle::drawComplexControl()`等等，这是一种强大但比较底层的实现方式，需要十分小心并且需要相当多的代码。
+  - 第三种是绘制部件，这是一种简单的高层次的方式，留给`Qt`去处理平台相关性，保持代码尽可能整洁。
+  
+  这里以`RichTextDelegate`类为例。它将渲染和编辑功能都实现了。
+  
+  **构造函数**
+  
+  ~~~c++
+  RichTextDelegate::RichTextDelegate(QObject *parent)
+      : QStyledItemDelegate(parent)
+  {
+      checkbox = new QCheckBox;
+      checkbox->setFixedSize(
+              qRound(1.3 * checkbox->sizeHint().height()),
+              checkbox->sizeHint().height());
+      label = new QLabel;
+      label->setTextFormat(Qt::RichText);
+      label->setWordWrap(false);
+  }
+  ~~~
+  
+  ​	设置复选框占据的宽度比它实际需要的多一点，以提供一些边距，这样它就不会紧靠着标签部件了。
+  
+  **`paint()`**
+  
+  ~~~c++
+  void RichTextDelegate::paint(QPainter *painter,
+          const QStyleOptionViewItem &option,
+          const QModelIndex &index) const
+  {
+      bool selected = option.state & QStyle::State_Selected;
+      QPalette palette(option.palette);
+      palette.setColor(QPalette::Active, QPalette::Window,
+                       selected ? option.palette.highlight().color()
+                                : option.palette.base().color());
+      palette.setColor(QPalette::Active, QPalette::WindowText,
+                       selected
+                       ? option.palette.highlightedText().color()
+                       : option.palette.text().color());
+  
+      int yOffset = checkbox->height() < option.rect.height()
+              ? (option.rect.height() - checkbox->height()) / 2 : 0;
+      QRect checkboxRect(option.rect.x(), option.rect.y() + yOffset,
+              checkbox->width(), checkbox->height());
+      checkbox->setPalette(palette);
+      bool checked = index.model()->data(index, Qt::CheckStateRole)
+                                         .toInt() == Qt::Checked;
+      checkbox->setChecked(checked);
+  
+      QRect labelRect(option.rect.x() + checkbox->width(),
+              option.rect.y(), option.rect.width() - checkbox->width(),
+              option.rect.height());
+      label->setPalette(palette);
+      label->setFixedSize(qMax(0, labelRect.width()),
+                          labelRect.height());
+      QString html = index.model()->data(index, Qt::DisplayRole)
+                                         .toString();
+      label->setText(html);
+  
+      QString checkboxKey = QString("CHECKBOX:%1.%2").arg(selected)
+                                                     .arg(checked);
+      paintWidget(painter, checkboxRect, checkboxKey, checkbox);
+      QString labelKey = QString("LABEL:%1.%2.%3x%4").arg(selected)
+              .arg(html).arg(labelRect.width()).arg(labelRect.height());
+      paintWidget(painter, labelRect, labelKey, label);
+  }	
+  ~~~
+  
+  ​	首先基于参数`option`的调色板创建一个新的调色板，然后设置新调色板的`QPalette::Window`背景色和`QPalette::Text`前景色为从`option`参数中获得颜色，并且把该项是否选中计入考量。
+  
+  ​	进行复选框相关的设置：先创建一个将在后面绘制复选框时用到的`checkboxRect`矩形区域对象。创建了该矩形之后，如果`option`矩形的高度大于复选框所需高度的话，那么设置该矩形在可用空间中垂直居中。接着设置复选框的调色板为先前创建的调色板对象，最后设置复选框的选中状态为对应项的选中状态。
+  
+  ​	对于标签必须为每一项进行大小设置。为标签创建的`labelRect`矩形区域是基于参数`option`给定的矩形区域的，只是向右边进行了偏移，以空出复选框的空间。宽度的减少可能会导致产生负的宽度，所以我们使用`qMax()`来进行纠正。一旦标签设置了调色板和大小尺寸，就获取对应项的文本并把它设置为标签的文本。
+  
+  ~~~c++
+  void RichTextDelegate::paintWidget(QPainter *painter,
+          const QRect &rect, const QString &cacheKey,
+          QWidget *widget) const
+  {
+      QPixmap pixmap(widget->size());
+  #if QT_VERSION >= 0x040600
+      if (!QPixmapCache::find(cacheKey, &pixmap)) {
+  #else
+      if (!QPixmapCache::find(cacheKey, pixmap)) {
+  #endif
+          widget->render(&pixmap);
+          QPixmapCache::insert(cacheKey, pixmap);
+      }
+      painter->drawPixmap(rect, pixmap);
+  }
+  ~~~
+  
+  ​	先创建一个指定尺寸的空白图像。`QPixmapCache::find()`方法用来根据指定的标志从缓存中获取一个图像。如果在缓存中找到该标志，则返回`true`，并且填充通过指针传入的`QPixmap`对象；否则返回`false`。第一次时我们把给定的窗口部件渲染到空白图像上，并把它插入到缓存中。最后，在给定的矩形区域中绘制这个图像。另一个获取窗口部件的图像的方式是使用`QPixmap::gradWidget()`方法，把窗口部件作为参数传入。
+  
+  ​	这种方法最主要的优点是它把几乎所有的绘制和样式方面的工作都交给了`Qt`本身去做，使得我们的代码比起用其他方式要极尽简单，而且得益于图像缓存的使用，我们的代码效率更高。
+  
+  **`sizeHint()`**
+  
+  ~~~c++
+  QSize RichTextDelegate::sizeHint(const QStyleOptionViewItem &option,
+                                   const QModelIndex &index) const
+  {
+      QString html = index.model()->data(index, Qt::DisplayRole)
+                                         .toString();
+      document.setDefaultFont(option.font);
+      document.setHtml(html);
+      return QSize(document.idealWidth(), option.fontMetrics.height());
+  }
+  ~~~
+  
+  ​	大多数情况下，不需要重新实现`sizeHint()`方法，这里遇到了非常情况，需要自己计算文本的宽度。
+  
+  ​	最明显的测定宽度的方法是把文本内容转换为纯文本并调用`QFontMetrics::width()`方法计算。但遗憾的是，这种方法没有考虑更精细的细节，例如作为上标或下标的字符，或加粗、倾斜的字母要比普通字母要宽些等等。这里需要的精确计算已经由使用的`QTextDocument::idealWidth()`方法实现了。
+  
+  ​	在一些平台下，每一次获取尺寸提示调用时都创建和销毁一个`QTextDocument`对象的代价非常昂贵，所以在类的私有成员中，声明了一个易变的`mutable QTextDocument`对象；也就是说，每次都重用同一个`QTextDocument`对象。
+  
+  ~~~c++
+  class RichTextDelegate : public QStyledItemDelegate
+  {
+      Q_OBJECT
+  	......
+  private:
+      QCheckBox *checkbox;
+      QLabel *label;
+      mutable QTextDocument document;
+  };
+  ~~~
+  
+  
+  
+  **`createEditor()`**
+  
+  ~~~c++
+  QWidget *RichTextDelegate::createEditor(QWidget *parent,
+          const QStyleOptionViewItem &option, const QModelIndex&) const
+  {
+      RichTextLineEdit *editor = new RichTextLineEdit(parent);
+      editor->viewport()->setFixedHeight(option.rect.height());
+      connect(editor, SIGNAL(returnPressed()),
+              this, SLOT(closeAndCommitEditor()));
+      return editor;
+  }
+  ~~~
+  
+  ​	这个方法用来为指定的模型索引代表的项创建一个合适的编辑器。这里设置编辑器的可视高度为固定值(参数`option`所指的矩形区域的高度)是必要的，用以防止`RickTextLineEdit`部件在文本输入时，其内容的忽上忽下的变化。
+  
+  ​	如果用户按下`Return`或`Enter`按键，就把它看作是编辑完成的确认，所以把`RickTextLineEdit`的`returnPressed()`信号连接到一个私有自定义槽`closeAndCommitEditor()`。
+  
+  ~~~c++
+  void RichTextDelegate::closeAndCommitEditor()
+  {
+      RichTextLineEdit *lineEdit = qobject_cast<RichTextLineEdit*>(
+                                                sender());
+      Q_ASSERT(lineEdit);
+      emit commitData(lineEdit);
+      emit closeEditor(lineEdit);
+  }
+  ~~~
+  
+  ​	发送两个信号，一个信号通知委托提交编辑器的数据，另一个信号通知委托关闭编辑器，因为不再需要编辑器了。
+  
+  **`setEditorData()`**
+  
+  ~~~c++
+  void RichTextDelegate::setEditorData(QWidget *editor,
+          const QModelIndex &index) const
+  {
+      QString html = index.model()->data(index, Qt::DisplayRole)
+                                         .toString();
+      RichTextLineEdit *lineEdit = qobject_cast<RichTextLineEdit*>(
+                                                editor);
+      Q_ASSERT(lineEdit);
+      lineEdit->setHtml(html);
+  }
+  ~~~
+  
+  ​	一旦编辑器创建完毕，委托调用`setEditorData()`方法用从模型中获取的数据来初始化它。
+  
+  **`setModelData()`**
+  
+  ~~~c++
+  void RichTextDelegate::setModelData(QWidget *editor,
+          QAbstractItemModel *model, const QModelIndex &index) const
+  {
+      RichTextLineEdit *lineEdit = qobject_cast<RichTextLineEdit*>(
+                                                editor);
+      Q_ASSERT(lineEdit);
+      model->setData(index, lineEdit->toSimpleHtml());
+  }
+  ~~~
+  
+  ​	如果用户确认编辑完毕，通过在编辑器外部点击、通过制表符键切换到其他项、或通过按下`Return`或`Enter`键，将调用上面的这个`setModelData()`方法。通过按下`ESC`键来取消编辑。
+  
+  ​	这个委托是用于数据类型相关的列或行委托，也就是说，它从来也不需要去检查给定项的行或列来确认要处理的数据类型，而且总是用相同的方式处理每一项。
   
   ### 3.3 与模型相关的委托
   
