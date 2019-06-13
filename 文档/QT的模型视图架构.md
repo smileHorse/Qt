@@ -1218,3 +1218,466 @@
   ## 4、 视图
   
   ​	如果想以一种不同于任何一种`Qt`内置视图的方式呈现数据项，或者想自定义互相关联的项的外观，这时就需要创建自定义视图了。
+  
+  ​	大多数时候，`Qt`中的标准模型视图，及`QListView`、`QTableView`、`QColumnView`和`QTreeView`对大多数场合来说足够用了。它们也能被子类化或使用自定义委托，以影响模型项的显示。然而， 有两种需要创建自定义视图的情况：
+  
+  - 第一种是我们想呈现数据的方式与`Qt`的标准视图呈现数据的方式从根本上不一样；
+  
+  - 另一种是我们想以某种方式把两项或多项的数据项组合起来进行显示；
+  
+    广义的讲，有两种创建自定义视图的方式可用：
+  
+  - 一种方式在我们想要创建一个视图组件时使用，即一个可能在多个不同的模型间进行复用，并且与`Qt`的模型/视图架构相适应的视图。在这种情况下，我们通常子类化`QAbstractItemView`，并且提供标准的视图`API`，这样任何模型都能使用我们的视图。
+  - 另一种方式，当我们想以一种独特的方式显示一个特定模型中的数据，并且这种显示方式没什么可能或根本没有可能进行复用时比较有用。在这种情况下，我们只能简单地创建一个刚好有且仅有所需功能的自定义模型视图。这通常涉及子类化`QWidget`并提供自己的`API`，但包含一个`setModel`方法。
+  
+  ### 4.1`QAbstractItemView`子类
+  
+  ​	下面列出了实现一个自定义`QAbstractItemView`派生类所需的最小`API`集合：
+  
+  | 方法(*表示纯虚函数)                      | 说明                                                         |
+  | ---------------------------------------- | ------------------------------------------------------------ |
+  | `dataChanged(topLeft,bottomRight)`       | 当模型中由`topLeft`到`bottomRight`涵盖的模型索引对应的项发生变化时调用这个槽 |
+  | `horizontalOffset()`*                    | 返回视图的水平偏移量                                         |
+  | `indexAt(point)`*                        | 返回视口(`viewport`) 中坐标点`point`处的项的模型索引         |
+  | `isIndexHidden(index)`*                  | 如果模型索引`index` 所对应的项是隐藏状态，则返回`true`       |
+  | `mousePressEvent(event)`                 | 通常用于把鼠标点击的项的模型索引设置为当前模型索引           |
+  | `mouseCursor(how,modifiers)`*            | 在按照`how`(向上、下、左、右) 的指示进行移动后返回新项的模型索引，同时把由`modifiers`指明的控制按键计入考量 |
+  | `paintEvent(event)`                      | 绘制视图的内容到视口                                         |
+  | `resizeEvent(event)`                     | 通常用于更新滚动条                                           |
+  | `rowsAboutToBeRemoved(parent,start,end)` | 当以`parent` 为父索引的从`start`到`end`结束的行要被删除的时候调用该方法 |
+  | `rowsInserted(parent,start,end)`         | 当从`start` 开始到`end`结束的行要被插入到`parent`父索引之下时调用该方法 |
+  | `scrollContentsBy(dx,dy)`                | 在水平方向和垂直方向上分别滚动视图的视口`dx`和`dy`像素       |
+  | `scrollTo(index,hint)`*                  | 滚动视图以确保给定模型索引`index`所对应的项是可见的，按照参数`hint`所指的滚动属性来滚动 |
+  | `setModel(model)`                        | 使视图使用给定的模型`model`                                  |
+  | `setSelection(rect,flags)`               | 应用选中标志`flags`到参数`rect`涵盖或接触到的所有项          |
+  | `updateGeometries()`                     | 通常用于更新视图的子窗口部件的位置和尺寸，例如滚动条         |
+  | `verticalOffset()`                       | 返回视图的垂直偏移量                                         |
+  | `visualRect(index)`*                     | 返回给定模型索引`index`对应的项所占据的矩形区域              |
+  | `visualRegionForSelection(selection)`*   | 返回参数`selection` 中包含的那些项的视口区域                 |
+  
+  ​	`QAbstractItemView`基类为它要显示的内容提供了一个滚动区域。一个`QAbstractItemView`子类窗口部件的唯一可见区域是它的视口(`viewport`)，就是在滚动区域中显示出来的那部分。这个可见区域可以通过`viewport()`方法访问到。这个窗口部件的实际大小无关紧要；重要的是要显示所有的模型数据所需要的窗口部件尺寸，即使它远远超出屏幕大小。
+  
+  **构造函数**
+  
+  ~~~c++
+  TiledListView::TiledListView(QWidget* parent /*= 0*/)
+  	: QAbstractItemView(parent), idealWidth(0), idealHeight(0),
+  	hashIsDirty(false)
+  {
+  	setFocusPolicy(Qt::WheelFocus);
+  	setFont(QApplication::font("QListView"));
+  	horizontalScrollBar()->setRange(0, 0);
+  	verticalScrollBar()->setRange(0, 0);
+  }
+  ~~~
+  
+  ​	调用`setFont()`方法来设置窗口部件的字体，而不是像通常在自定义窗口部件中所做的那样使用继承过来的字体。字体有`QApplication::font()`方法返回，如果给定一个类名，就会返回一个该类使用的平台相关的字体。
+  
+  ​	设置滚动条的范围为(0,0)，这将确保滚动条一直隐藏直到需要时才显示，而把关于隐藏和显示方面的工作留给基类去处理。
+  
+  **`setModel()`**
+  
+  ~~~c++
+  void TiledListView::setModel(QAbstractItemModel* model)
+  {
+  	QAbstractItemView::setModel(model);
+  	hashIsDirty = true;
+  }
+  ~~~
+  
+  **`calculateRectsIfNecessary()`**
+  
+  ~~~c++
+  void TiledListView::calculateRectsIfNecessary() const
+  {
+  	if (!hashIsDirty)
+  	{
+  		return;
+  	}
+  	const int ExtraWidth = 10;
+  	QFontMetrics fm(font());
+  	const int RowHeight = fm.height() + ExtraHeight;
+  	const int MaxWidth = viewport()->width();
+  	int minimumWidth = 0;
+  	int x = 0;
+  	int y = 0;
+  	for (int row = 0; row < model()->rowCount(rootIndex()); ++row)
+  	{
+  		QModelIndex index = model()->index(row, 0, rootIndex());
+  		QString text = model()->data(index).toString();
+  		int textWidth = fm.width(text);
+  		if (!(x == 0 || x + textWidth + ExtraWidth < MaxWidth))
+  		{
+  			y += RowHeight;
+  			x = 0;
+  		}
+  		else if (x != 0)
+  		{
+  			x += ExtraWidth;
+  		}
+  		rectForRow[row] = QRectF(x, y, textWidth + ExtraWidth, RowHeight);
+  		if (textWidth > minimumWidth)
+  		{
+  			minimumWidth = textWidth;
+  		}
+  		x += textWidth;
+  	}
+  	idealWidth = minimumWidth + ExtraWidth;
+  	idealHeight = y + RowHeight;
+  	hashIsDirty = false;
+  	viewport()->update();
+  }
+  ~~~
+  
+  ​	首先看看那些矩形区域是否需要重新计算。如果需要重新计算，就先计算出显示一行所需要的高度，以及在视口中可用的最大宽度，即可用的可见宽度。
+  
+  ​	方法的主循环中，遍历模型中的每一行(即每一项)，然后获取项的文本内容。接着计算该项所需要的宽度以及该项应该显示的`x`坐标和`y`坐标，这取决于该项能否在与前一项所在的同一行中合适地显示出来，或者是必须开始一个新行。一旦知道了该项的尺寸和位置，就由此创建一个矩形区域，并把它以该项的行号为键值加入到`rectForRow`哈希表中。
+  
+  ​	需要注意的是，在循环中进行计算的过程中，使用的是实际的可见宽度，但是假设了可用高度是在这个宽度下能够显示的所有项所需要的高度。为了获得想要的模型索引，把`QAbstractItemView::rootIndex()`而不是一个无效的模型索引(`QModelIndex()`)作为父索引参数。这两者都在列表模型中工作得一样出色，但在`QAbstractItemView`的派生类中使用更加通用的`rootIndex()`是一种更好的风格。
+  
+  ​	在末尾重新计算了理想的宽度值(即最宽的项的宽度加上一些边距)和高度值(高度是在视口的当前宽度下能够显示所有项所必需的高度，而不管视口的真实高度是多少)，这时候`y`变量保存的是所有行的总共高度。理想宽度可能比可用宽度要大些，例如，视口宽度比要显示的最宽项的宽度要窄的话。一旦计算完毕，我们就在视口上调用`update()`方法，因为所有的重绘工作都只在视口上进行，而不是在`QAbstractItemView`自定义窗口部件自身上进行，这样数据就会被重绘。
+  
+  ​	去关注`QAbstractItemView`自定义窗口部件自身的真实尺寸是没有意义的，所有的计算工作都是依照视口以及理想宽度和高度进行的。
+  
+  **`visualRect()`**
+  
+  ~~~c++
+  QRect TiledListView::visualRect(const QModelIndex &index) const
+  {
+  	QRect rect;
+  	if (index.isValid())
+  	{
+  		rect = viewportRectForRow(index.row()).toRect();
+  	}
+  	return rect;
+  }
+  ~~~
+  
+  ​	这个纯虚函数必须返回给定模型索引所对应的项占据的矩形区域。
+  
+  **`viewportRectForRow()`**
+  
+  ~~~c++
+  QRectF TiledListView::viewportRectForRow(int row) const
+  {
+  	calculateRectsIfNecessary();
+  	QRectF rect = rectForRow.value(row).toRect();
+  	if (!rect.isValid())
+  	{
+  		return rect;
+  	}
+  	return QRectF(rect.x() - horizontalScrollBar()->value(), 
+  		rect.y() - verticalScrollBar()->value(), rect.width(), rect.height());
+  }
+  ~~~
+  
+  ​	它返回某一项的最大精度的`QRectF`对象(例如对于`paintEvent()`方法)；其他调用者则使用`QRectF::toRect()`方法把返回值转化为了普通的基于整型的`QRect`对象。
+  
+  ​	`rectForRow`哈希表中的矩形区域有每一行的`x`和`y`坐标，这些坐标基于理想宽度(通常是可视宽度)和理想高度(在当前宽度下显示所有项所需要的高度)。这就是说，这些矩形区域有效地使用了基于该窗口部件的理想尺寸的窗口部件坐标系统。`viewportRectForRow()`方法必须返回一个在视口坐标系统中的矩形区域，这样我们才能调整坐标把滚动(`scrolling`)计入考量。
+  
+  ![1560406901886](.\images\1560406901886.png)
+  
+  **`isIndexHidden()`**
+  
+  ~~~c++
+  bool isIndexHidden(const QModelIndex &index) const { return false; }
+  ~~~
+  
+  ​	必须重新实现上面这个纯虚方法。这个方法是为那些可能有隐藏项的数据设计的。
+  
+  **`scrollTo()`**
+  
+  ~~~c++
+  void TiledListView::scrollTo(const QModelIndex &index, ScrollHint hint /*= EnsureVisible*/)
+  {
+  	QRect viewRect = viewport()->rect();
+  	QRect itemRect = visualRect(index);
+  
+  	if (itemRect.left() < viewRect.left())
+  	{
+  		horizontalScrollBar()->setValue(
+  			horizontalScrollBar()->value() + itemRect.left() - viewRect.left());
+  	}
+  	else if (itemRect.right() > viewRect.right())
+  	{
+  		horizontalScrollBar()->setValue(horizontalScrollBar()->value() + 
+  			qMin(itemRect.right() - viewRect.right(), itemRect.left() - viewRect.left()));
+  	}
+  	if (itemRect.top() < viewRect.top())
+  	{
+  		verticalScrollBar()->setValue(verticalScrollBar()->value() + 
+  			itemRect.top() - viewRect.top());
+  	}
+  	else if (itemRect.bottom() > viewRect.bottom())
+  	{
+  		verticalScrollBar()->setValue(verticalScrollBar()->value() + 
+  			qMin(itemRect.bottom() - viewRect.bottom(), itemRect.top() - viewRect.top()));
+  	}
+  	viewport()->update();
+  }
+  ~~~
+  
+  ​	这也是一个必须实现的纯虚方法。如果指定项占据的矩形区域在视口的左边框的左边，那么视口必须要滚动。滚动是通过改变水平滚动条的值来实现的，即加上指定项占据的矩形区域的左边框与视口的左边框距离之差。其他情况与之类似。
+  
+  **`indexAt()`**
+  
+  ~~~c++
+  QModelIndex TiledListView::indexAt(const QPoint &point_) const
+  {
+  	QPoint point(point_);
+  	point.rx() += horizontalScrollBar()->value();
+  	point.ry() += verticalScrollBar()->value();
+  	calculateRectsIfNecessary();
+  	QHashIterator<int, QRectF> i(rectForRow);
+  	while (i.hasNext()) {
+  		i.next();
+  		if (i.value().contains(point))
+  		{
+  			return model()->index(i.key(), 0, rootIndex());
+  		}
+  	}
+  	return QModelIndex();
+  }
+  ~~~
+  
+  ​	这个纯虚方法必须返回给定坐标点对应的项的模型索引。这个坐标点是基于视口坐标系统，但是`rectForRow`中的那些矩形区域是基于窗口部件的坐标系统。我们不是把每一个矩形区域坐标进行转换来检查它是否包含这个坐标点，而是只做一次转换，把该坐标点的坐标转换为窗口部件坐标系统中的坐标。
+  
+  ​	`QPoint::rx()`和`QPoint::ry()`方法返回该坐标点的`x`坐标和`y`坐标的一个非常量引用，这样就易于改变它们。如果没有这样的方法，就必须像`point.setX(horizontalScrollBar()->value()+point.x())`这样做。
+  
+  **`dataChanged()`**
+  
+  ~~~c++
+  void TiledListView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, 
+  	const QVector<int> &roles /*= QVector<int>()*/)
+  {
+  	hashIsDirty = true;
+  	QAbstractItemView::dataChanged(topLeft, bottomRight);
+  }
+  ~~~
+  
+  ​	注意这里没有调用`viewport()->update()`来安排重绘。发生变化的数据可能是不可见的，所以重绘可能不是必要的，如果确实需要重绘，`dataChanged()`的基类实现会代我们做重绘调度。
+  
+  **`rowsInserted()`和`rowsAboutToBeRemoved()`**
+  
+  ~~~c++
+  void TiledListView::rowsInserted(const QModelIndex &parent, int start, int end)
+  {
+  	hashIsDirty = true;
+  	QAbstractItemView::rowsInserted(parent, start, end);
+  }
+  
+  void TiledListView::rowsAboutToBeRemoved(const QModelIndex &parent, int start, int end)
+  {
+  	hashIsDirty = true;
+  	QAbstractItemView::rowsAboutToBeRemoved(parent, start, end);
+  }
+  ~~~
+  
+  ​	如果有新行插入到模型中，或者有一些行将要被删除，那么必须确保视图能够正确响应。这种情况只需简单地把工作交给基类完成就可以了。
+  
+  **`moveCursor()`**
+  
+  ~~~c++
+  QModelIndex TiledListView::moveCursor(QAbstractItemView::CursorAction cursorAction, Qt::KeyboardModifiers modifiers)
+  {
+  	QModelIndex index = currentIndex();
+  	if (index.isValid())
+  	{
+  		if ((cursorAction == MoveLeft && index.row() > 0) || 
+  			(cursorAction == MoveRight && index.row() + 1 < model()->rowCount()))
+  		{
+  			const int offset = (cursorAction == MoveLeft ? -1 : 1);
+  			index = model()->index(index.row() + offset, index.column(), index.parent());
+  		}
+  		else if ((cursorAction == MoveUp && index.row() > 0) || 
+  			(cursorAction == MoveDown && index.row() + 1 < model()->rowCount()))
+  		{
+  			QFontMetrics fm(font());
+  			const int RowHeight = (fm.height() + ExtraHeight) * (cursorAction == MoveUp ? -1 : 1);
+  			QRect rect = viewportRectForRow(index.row()).toRect();
+  			QPoint point(rect.center().x(), rect.center().y() + RowHeight);
+  			while(point.x() >= 0) {
+  				index = indexAt(point);
+  				if (index.isValid())
+  				{
+  					break;
+  				}
+  				point.rx() -= fm.width("n");
+  			}
+  		}
+  	}
+  	return index;
+  }
+  ~~~
+  
+  ​	这个方法必须返回所请求移动动作要移动到的位置处的项的模型索引，如果没有移动动作发生，就返回一个无效的模型索引。如果返回一个无效的`QModelIndex`，`QAbstractItemView`基类什么也不做。
+  
+  **`horizontalOffset()`和`verticalOffset()`**
+  
+  ~~~c++
+  int TiledListView::horizontalOffset() const
+  {
+  	return horizontalScrollBar()->value();
+  }
+  
+  int TiledListView::verticalOffset() const
+  {
+  	return verticalScrollBar()->value();
+  }
+  ~~~
+  
+  ​	这个纯虚方法必须实现。它们必须返回视口在窗口部件中的`x`坐标和`y`坐标偏移量。
+  
+  **`scrollContentsBy()`**
+  
+  ~~~c++
+  void TiledListView::scrollContentsBy(int dx, int dy)
+  {
+  	scrollDirtyRegion(dx, dy);
+  	viewport()->scroll(dx, dy);
+  }
+  ~~~
+  
+  ​	当滚动条移动时就调用这个方法。它的职责是确保视口按给定的数值进行滚动，并安排适当地重绘。这里通过在进行滚动之前调用`QAbstractItemView::scrollDirtyRegion()`方法来设置重绘。另一种选择是在执行完滚动后调用`viewport()->update()`方法。
+  
+  ​	基类的实现仅是调用了`viewport()->update()`，并没有真正执行滚动。如果想在程序中用编码方式进行滚动，就需要通过调用`QScrollBar::setValue()`作用于滚动条来实现。
+  
+  **`setSelection()`**
+  
+  ~~~c++
+  void TiledListView::setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags)
+  {
+  	QRect rectangle = rect.translated(horizontalScrollBar()->value(),
+  		verticalScrollBar()->value()).normalized();
+  	calculateRectsIfNecessary();
+  	QHashIterator<int, QRectF> i(rectForRow);
+  	int firstRow = model()->rowCount();
+  	int lastRow = -1;
+  	while (i.hasNext()) {
+  		i.next();
+  		if (i.value().intersects(rectangle))
+  		{
+  			firstRow = firstRow < i.key() ? firstRow : i.key();
+  			lastRow = lastRow > i.key() ? lastRow : i.key();
+  		}
+  	}
+  	if (firstRow != model()->rowCount() && lastRow != -1)
+  	{
+  		QItemSelection selection(model()->index(firstRow, 0, rootIndex()),
+  			model()->index(lastRow, 0, rootIndex()));
+  		selectionModel()->select(selection, flags);
+  	}
+  	else {
+  		QModelIndex invalid;
+  		QItemSelection selection(invalid, invalid);
+  		selectionModel()->select(selection, flags);
+  	}
+  }
+  ~~~
+  
+  ​	这个纯虚方法用于把给定的选择标志应用到给定矩形区域涵盖的或接触到的项中。真正的选择动作必须通过调用`QAbstractItemView::selectionModel()->select()`来完成。
+  
+  ​	传入的矩形区域是基于视口坐标系统的，所以必须首先创建一个基于窗口部件坐标系统的矩形区域，因为它将被`rectForRow`哈希表所使用。然后以任意顺序遍历哈希表中的所有行，如果任意一项所处的区域与给定的矩形区域有交集，就扩展选集涵盖的起始行和结束行以包含该项(如果该项还没有包含进来的话)。
+  
+  ****
+  
+  **`visualRegionForSelection()`**
+  
+  ~~~c++
+  QRegion TiledListView::visualRegionForSelection(const QItemSelection &selection) const
+  {
+  	QRegion region;
+  	foreach(const QItemSelectionRange& range, selection)
+  	{
+  		for (int row = range.top(); row <= range.bottom(); ++row)
+  		{
+  			for (int column = range.left(); column < range.right(); ++column)
+  			{
+  				QModelIndex index = model()->index(row, column, rootIndex());
+  				region += visualRect(index);
+  			}
+  		}
+  	}
+  	return region;
+  }
+  ~~~
+  
+  ​	这个纯虚方法必须实现，并且要返回一个`QRegion`对象，这个对象包含了视图中所有在视口中显示出来的选中项，并使用视口的坐标系统。
+  
+  **`paintEvent()`**
+  
+  ~~~c++
+  void TiledListView::paintEvent(QPaintEvent *event)
+  {
+  	QPainter painter(viewport());
+  	painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+  	for (int row = 0; row < model()->rowCount(rootIndex()); ++row)
+  	{
+  		QModelIndex index = model()->index(row, 0, rootIndex());
+  		QRectF rect = viewportRectForRow(row);
+  		if (!rect.isValid() || rect.bottom() < 0 || rect.y() > viewport()->height())
+  		{
+  			continue;
+  		}
+  		QStyleOptionViewItem option = viewOptions();
+  		option.rect = rect.toRect();
+  		if (selectionModel()->isSelected(index))
+  		{
+  			option.state |= QStyle::State_Selected;
+  		}
+  		if (currentIndex() == index)
+  		{
+  			option.state |= QStyle::State_HasFocus;
+  		}
+  		itemDelegate()->paint(&painter, option, index);
+  		paintOutline(&painter, rect);
+  	}
+  }
+  ~~~
+  
+  ​	要注意我们是在窗口部件的视口上进行绘制，而不是在窗口部件本身上绘制。最重要的是，我们不自己绘制这些项，而是交由视图的委托 -- 可能是基类的内置`QStyledItemDelegate`或由类的使用者设置的一个自定义委托来绘制这些项。这是为了确保视图支持自定义委托。
+  
+  **`resizeEvent()`**
+  
+  ~~~c++
+  void TiledListView::resizeEvent(QResizeEvent *event)
+  {
+  	hashIsDirty = true;
+  	calculateRectsIfNecessary();
+  	updateGeometries();
+  }
+  ~~~
+  
+  ​	如果视图调整了尺寸大小，那么必须重新计算所有项的矩形区域并更新滚动条。
+  
+  **`updateGeometries()`**
+  
+  ~~~c++
+  void TiledListView::updateGeometries()
+  {
+  	QFontMetrics fm(font());
+  	const int RowHeight = fm.height() + ExtraHeight;
+  	horizontalScrollBar()->setSingleStep(fm.width("n"));
+  	horizontalScrollBar()->setPageStep(viewport()->width());
+  	horizontalScrollBar()->setRange(0, qMax(0, idealWidth - viewport()->width()));
+  	verticalScrollBar()->setSingleStep(RowHeight);
+  	verticalScrollBar()->setPageStep(viewport()->height());
+  	verticalScrollBar()->setRange(0, qMax(0, idealHeight - viewport()->height()));
+  }
+  ~~~
+  
+  ​	这个方法用于更新视图的子窗口部件，如滚动条。
+  
+  **`mousePressEvent()`**
+  
+  ~~~c++
+  void TiledListView::mousePressEvent(QMouseEvent *event)
+  {
+  	QAbstractItemView::mousePressEvent(event);
+  	setCurrentIndex(indexAt(event->pos()));
+  }
+  ~~~
+  
+  
+  
+  ### 4.2 与模型相关的可视化视图
